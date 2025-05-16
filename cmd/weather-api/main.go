@@ -1,17 +1,38 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/joho/godotenv"
 	"net/http"
+	"os"
 	"weather-api/internal/handlers"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
+
+	var (
+		user     = os.Getenv("DB_USER")
+		password = os.Getenv("DB_PASSWORD")
+		url      = fmt.Sprintf("host=localhost port=5432 dbname=weather-database user=%s password=%s", user, password)
+	)
+
+	conn, err := sql.Open("pgx", url)
+	if err != nil {
+		panic(err)
+	}
+
 	// init mux
 	mux := http.NewServeMux()
 
 	// init handlers
 	weatherHandler := new(handlers.WeatherHandler)
-	subscriptionHandler := new(handlers.SubscriptionHandler)
+	subscriptionHandler := handlers.NewSubscriptionHandler(conn)
 
 	// weather
 	mux.HandleFunc("GET /weather", weatherHandler.GetWeather)
