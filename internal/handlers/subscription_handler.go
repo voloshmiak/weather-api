@@ -1,21 +1,22 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"log"
 	"net/http"
 	"weather-api/internal/models"
+	"weather-api/internal/repository"
+	"weather-api/internal/service"
 )
 
 type SubscriptionHandler struct {
-	conn *sql.DB
+	service *service.SubscriptionService
 }
 
-func NewSubscriptionHandler(conn *sql.DB) *SubscriptionHandler {
+func NewSubscriptionHandler(service *service.SubscriptionService) *SubscriptionHandler {
 	return &SubscriptionHandler{
-		conn: conn,
+		service: service,
 	}
 }
 
@@ -32,8 +33,13 @@ func (sh *SubscriptionHandler) PostSubscription(rw http.ResponseWriter, r *http.
 
 	rw.Header().Set("Content-Type", "application/json")
 
+	err := sh.service.Subscribe(email, city, frequency)
+	if errors.Is(err, repository.AlreadySubscribedError) {
+		http.Error(rw, "Already subscribed", 409)
+	}
+
 	rw.WriteHeader(http.StatusOK)
-	rw.Write([]byte(fmt.Sprintf("%s, %s, %s", email, city, frequency)))
+
 }
 
 func (sh *SubscriptionHandler) GetConfirm(rw http.ResponseWriter, r *http.Request) {

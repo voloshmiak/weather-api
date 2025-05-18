@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"weather-api/internal/handlers"
+	"weather-api/internal/repository"
+	"weather-api/internal/service"
 )
 
 func main() {
@@ -30,9 +32,15 @@ func main() {
 	// init mux
 	mux := http.NewServeMux()
 
+	// init repo
+	subscriptionRepo := repository.NewSubscriptionRepository(conn)
+
+	// init service
+	subscriptionService := service.NewSubscriptionService(subscriptionRepo)
+
 	// init handlers
 	weatherHandler := new(handlers.WeatherHandler)
-	subscriptionHandler := handlers.NewSubscriptionHandler(conn)
+	subscriptionHandler := handlers.NewSubscriptionHandler(subscriptionService)
 
 	// weather
 	mux.HandleFunc("GET /weather", weatherHandler.GetWeather)
