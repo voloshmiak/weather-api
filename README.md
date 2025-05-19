@@ -3,12 +3,6 @@ Software Engineering School 5.0 // Case Task
 
 This project is a weather subscription service API. It allows users to subscribe to weather updates for a specific city at a given frequency (hourly or daily). Subscriptions require email confirmation. Users can also confirm their subscription and unsubscribe. The API also provides an endpoint to get the current weather for a city.
 
-## Features
-*   Subscribe to weather updates (requires email confirmation).
-*   Confirm subscription via a unique token sent to email.
-*   Unsubscribe from weather updates using a unique token.
-*   Get current weather information for a specified city.
-
 ## Technologies Used
 *   Go
 *   PostgreSQL
@@ -32,17 +26,16 @@ This project is a weather subscription service API. It allows users to subscribe
 
 ### Prerequisites
 *   Docker
-*   Docker Compose
 
 ### Launching the Application
 1.  **Clone the repository:**
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/voloshmiak/weather-api.git
     cd weather-api
     ```
 
 2.  **Environment Variables:**
-    The application uses environment variables for configuration. A `.env` file can be used to set these locally. The `docker-compose.yml` file already sets the necessary environment variables for the services.
+    The application uses environment variables for configuration. The `docker-compose.yml` file already sets the necessary environment variables for the services.
     Key variables include:
     *   `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` for database connection.
     *   `SMTP_HOST`, `SMTP_PORT` for the MailHog email server.
@@ -53,11 +46,6 @@ This project is a weather subscription service API. It allows users to subscribe
     ```bash
     docker-compose up --build
     ```
-    This command will:
-    *   Build the Go application Docker image.
-    *   Start the application container.
-    *   Start a PostgreSQL database container.
-    *   Start a MailHog container for email testing.
 
 4.  **Accessing the Services:**
     *   **API:** `http://localhost:8080` (or the `API_PORT` you configured)
@@ -66,7 +54,7 @@ This project is a weather subscription service API. It allows users to subscribe
         *   `GET /unsubscribe/{token}`
         *   `GET /weather?city={city_name}`
     *   **MailHog (Email UI):** `http://localhost:8025`
-    *   **Database (PostgreSQL):** Accessible on `localhost:5432` (from your host machine if needed, or `db:5432` from within the app network).
+    *   **Database (PostgreSQL):** Accessible on `localhost:5432`
 
 ### Database Migrations
 Database migrations are handled by `golang-migrate` and are applied automatically when the application starts. Migration files are located in the `/migrations` directory.
