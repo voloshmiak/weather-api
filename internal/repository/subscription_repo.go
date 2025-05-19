@@ -3,7 +3,7 @@ package repository
 import (
 	"database/sql"
 	"errors"
-	"log"
+	"weather-api/internal/models"
 )
 
 var AlreadySubscribedError = errors.New("already subscribed")
@@ -18,32 +18,52 @@ func NewSubscriptionRepository(conn *sql.DB) *SubscriptionRepository {
 	}
 }
 
-func (repo *SubscriptionRepository) InsertSubscription(email, city, frequency string) error {
-	query := `INSERT INTO subs (email, city, frequency, confirm) VALUES ($1, $2, $3, $4)`
+func (repo *SubscriptionRepository) InsertSubscription(email, city, frequency, token string) error {
+	query := `INSERT INTO subs (email, city, frequency, confirmed, confirmation_token) VALUES ($1, $2, $3, $4, $5)`
 
-	err := repo.GetSubscription(email, city, frequency)
+	_, err := repo.conn.Exec(query, email, city, frequency, false, token)
 	if err != nil {
-		return AlreadySubscribedError
-	}
-
-	_, err = repo.conn.Exec(query, email, city, frequency, false)
-	if err != nil {
-		log.Println("dsadasda" + err.Error())
+		return err
 	}
 	return err
 }
 
-func (repo *SubscriptionRepository) GetSubscription(email, city, frequency string) error {
-	query := `SELECT id FROM subs WHERE email = $1`
+func (repo *SubscriptionRepository) GetSubscription(email string) (*models.Subscription, error) {
+	sub := new(models.Subscription)
 
-	var id int
+	query := `SELECT email, city, frequency, confirmed FROM subs WHERE email = $1`
 
-	err := repo.conn.QueryRow(query, email).Scan(&id)
+	err := repo.conn.QueryRow(query, email).Scan(&sub.Email, &sub.City, &sub.Frequency, &sub.Confirmed)
+	if err != nil {
+		return nil, err
+	}
+
+	return sub, nil
+}
+
+func (repo *SubscriptionRepository) UpdateTokens(token, unsubscribeToken string) error {
+	query := `UPDATE subs SET confirmed = true, unsubscribe_token = $1  WHERE confirmation_token = $2`
+	_, err := repo.conn.Exec(query, unsubscribeToken, token)
 	if err != nil {
 		return err
 	}
+	return nil
+}
 
-	log.Println(id)
+func (repo *SubscriptionRepository) UpdateConfirmationToken(token string) error {
+	query := `UPDATE subs SET confirmation_token = $1 WHERE confirmation_token = $2`
+	_, err := repo.conn.Exec(query, token, token)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
+func (repo *SubscriptionRepository) DeleteSubscription(token string) error {
+	query := `DELETE FROM subs WHERE unsubscribe_token = $1`
+	_, err := repo.conn.Exec(query, token)
+	if err != nil {
+		return err
+	}
 	return nil
 }
