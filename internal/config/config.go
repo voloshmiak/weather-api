@@ -53,3 +53,8 @@ func GetSMTPPort() string {
 	smtpPort := getEnv("SMTP_PORT", "1025")
 	return smtpPort
 }
+
+func GetWeatherAPIKey() string {
+	weatherAPIKey := getEnv("WEATHER_API_KEY", "")
+	return weatherAPIKey
+}
