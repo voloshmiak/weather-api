@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"weather-api/internal/config"
 	"weather-api/internal/models"
 	"weather-api/internal/repository"
 )
@@ -23,7 +24,8 @@ func NewWeatherService(repo *repository.Repository) *WeatherService {
 }
 
 func (ws *WeatherService) GetWeatherByCity(city string) (*models.Weather, error) {
-	url := fmt.Sprintf("http://api.weatherapi.com/v1/current.json?key=56435458281c4b9fa24164805251305&q=%s&aqi=no", city)
+	weatherAPIKey := config.GetWeatherAPIKey()
+	url := fmt.Sprintf("http://api.weatherapi.com/v1/current.json?key=%s&q=%s&aqi=no", weatherAPIKey, city)
 
 	response, err := http.Get(url)
 	if err != nil {
