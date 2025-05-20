@@ -35,19 +35,33 @@ This project is a weather subscription service API. It allows users to subscribe
     ```
 
 2.  **Environment Variables:**
-    The application uses environment variables for configuration. The `docker-compose.yml` file already sets the necessary environment variables for the services.
+    The application uses environment variables for configuration. The `docker-compose.yml` file sets these for the services. You will need to provide your own `WEATHER_API_KEY`.
     Key variables include:
     *   `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` for database connection.
     *   `SMTP_HOST`, `SMTP_PORT` for the MailHog email server.
     *   `API_PORT` for the application server.
+    *   `WEATHER_API_KEY` for accessing the external weather API (e.g., WeatherAPI.com). **You need to obtain an API key from a weather service provider and replace `YOUR_API_KEY` in the `docker-compose.yml` file or set it as an environment variable.**
 
-3.  **Build and run the application using Docker Compose:**
+3.  **Update `docker-compose.yml`:**
+    Open the `docker-compose.yml` file and replace `YOUR_API_KEY` with your actual WeatherAPI key:
+    ```yaml
+    # ... other services
+    services:
+      app:
+        # ... other app config
+        environment:
+          # ... other env vars
+          - WEATHER_API_KEY=YOUR_ACTUAL_API_KEY_HERE # <-- Replace this
+    # ...
+    ```
+
+4.  **Build and run the application using Docker Compose:**
     From the root directory of the project, run:
     ```bash
     docker-compose up --build
     ```
 
-4.  **Accessing the Services:**
+5.  **Accessing the Services:**
     *   **API:** `http://localhost:8080` (or the `API_PORT` you configured)
         *   `POST /subscribe` - with form data: `email`, `city`, `frequency`
         *   `GET /confirm/{token}`
@@ -86,7 +100,7 @@ Database migrations are handled by `golang-migrate` and are applied automaticall
 
 ### Get Weather (`GET /weather?city={city_name}`)
 1.  User requests weather for a specific `city`.
-2.  The service fetches current weather data from an external weather API (WeatherAPI.com).
+2.  The service fetches current weather data from an external weather API (WeatherAPI.com) using the configured `WEATHER_API_KEY`.
 3.  The weather data (temperature, humidity, description) is returned as JSON.
 
 ### Stopping the Application

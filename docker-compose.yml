@@ -19,6 +19,7 @@ services:
       - SMTP_HOST=mailhog
       - SMTP_PORT=1025
       - API_PORT=8080
+      - WEATHER_API_KEY=YOUR_API_KEY
     networks:
       - app-network
 
