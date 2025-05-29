@@ -6,25 +6,24 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"weather-api/internal/config"
-	"weather-api/internal/models"
-	"weather-api/internal/repository"
+	"weather-api/internal/env"
+	"weather-api/internal/model"
 )
 
 var CityNotFound = errors.New("city not found")
 
-type WeatherService struct {
-	repo *repository.Repository
+type Weather interface {
+	GetWeatherByCity(city string) (*model.Weather, error)
 }
 
-func NewWeatherService(repo *repository.Repository) *WeatherService {
-	return &WeatherService{
-		repo: repo,
-	}
+type WeatherService struct{}
+
+func NewWeatherService() *WeatherService {
+	return new(WeatherService)
 }
 
-func (ws *WeatherService) GetWeatherByCity(city string) (*models.Weather, error) {
-	weatherAPIKey := config.GetWeatherAPIKey()
+func (ws *WeatherService) GetWeatherByCity(city string) (*model.Weather, error) {
+	weatherAPIKey := env.GetWeatherAPIKey()
 	url := fmt.Sprintf("http://api.weatherapi.com/v1/current.json?key=%s&q=%s&aqi=no", weatherAPIKey, city)
 
 	response, err := http.Get(url)
@@ -50,7 +49,7 @@ func (ws *WeatherService) GetWeatherByCity(city string) (*models.Weather, error)
 	condition, _ := current["condition"].(map[string]interface{})
 	description, _ := condition["text"].(string)
 
-	weather := &models.Weather{
+	weather := &model.Weather{
 		Temperature: temperature,
 		Humidity:    humidity,
 		Description: description,

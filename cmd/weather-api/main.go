@@ -14,16 +14,17 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-	"weather-api/internal/config"
+	"weather-api/internal/env"
 	"weather-api/internal/handler"
 	"weather-api/internal/repository"
+	"weather-api/internal/routes"
 	"weather-api/internal/service"
 )
 
 func main() {
 	// get the database URL from environment variables
-	migrationURL := config.GetMigrationURL()
-	dbURL := config.GetDatabaseURL()
+	migrationURL := env.GetMigrationURL()
+	dbURL := env.GetDatabaseURL()
 
 	log.Printf("Trying to run migrations from: %s", migrationURL)
 
@@ -53,12 +54,20 @@ func main() {
 
 	// set up the HTTP server
 	mux := http.NewServeMux()
-	repos := repository.NewRepository(conn)
-	services := service.NewService(repos)
-	handlers := handler.NewHandler(services)
-	handlers.RegisterRoutes(mux)
 
-	apiPort := config.GetAPIPort()
+	// Weather
+	weatherService := service.NewWeatherService()
+	weatherHandler := handler.NewWeatherHandler(weatherService)
+
+	// Subscription
+	subscriptionRepository := repository.NewSubscriptionRepository(conn)
+	subscriptionService := service.NewSubscriptionService(subscriptionRepository)
+	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService)
+
+	// Register routes
+	routes.Register(mux, weatherHandler, subscriptionHandler)
+
+	apiPort := env.GetAPIPort()
 	server := &http.Server{
 		Addr:    ":" + apiPort,
 		Handler: mux,

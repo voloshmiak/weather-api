@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"log"
 	"net/smtp"
-	"weather-api/internal/config"
+	"weather-api/internal/env"
 	"weather-api/internal/repository"
 )
 
@@ -15,11 +15,17 @@ var AlreadySubscribedError = errors.New("already subscribed")
 var InvalidTokenError = errors.New("invalid Token")
 var TokenNotFoundError = errors.New("token not found")
 
-type SubscriptionService struct {
-	repo *repository.Repository
+type Subscription interface {
+	Subscribe(email, city, frequency string) error
+	Confirm(token string) (string, error)
+	Unsubscribe(token string) error
 }
 
-func NewSubscriptionService(repo *repository.Repository) *SubscriptionService {
+type SubscriptionService struct {
+	repo repository.Subscription
+}
+
+func NewSubscriptionService(repo repository.Subscription) *SubscriptionService {
 	return &SubscriptionService{
 		repo: repo,
 	}
@@ -109,8 +115,8 @@ func (ss *SubscriptionService) Unsubscribe(token string) error {
 }
 
 func sendEmailToMailHog(fromEmail, toEmail, subject, body, token string) error {
-	smtpHost := config.GetSMTPHost()
-	smtpPort := config.GetSMTPPort()
+	smtpHost := env.GetSMTPHost()
+	smtpPort := env.GetSMTPPort()
 	smtpAddr := smtpHost + ":" + smtpPort
 
 	fullBody := body + "\nYour token: " + token + "\n"

@@ -2,11 +2,16 @@ package repository
 
 import (
 	"database/sql"
-	"errors"
-	"weather-api/internal/models"
+	"weather-api/internal/model"
 )
 
-var AlreadySubscribedError = errors.New("already subscribed")
+type Subscription interface {
+	InsertSubscription(email, city, frequency, token string) error
+	GetSubscription(email string) (*model.Subscription, error)
+	UpdateTokens(token, unsubscribeToken string) error
+	UpdateConfirmationToken(token string) error
+	DeleteSubscription(token string) error
+}
 
 type SubscriptionRepository struct {
 	conn *sql.DB
@@ -28,8 +33,8 @@ func (repo *SubscriptionRepository) InsertSubscription(email, city, frequency, t
 	return err
 }
 
-func (repo *SubscriptionRepository) GetSubscription(email string) (*models.Subscription, error) {
-	sub := new(models.Subscription)
+func (repo *SubscriptionRepository) GetSubscription(email string) (*model.Subscription, error) {
+	sub := new(model.Subscription)
 
 	query := `SELECT email, city, frequency, confirmed FROM subs WHERE email = $1`
 

@@ -8,17 +8,21 @@ import (
 )
 
 type SubscriptionHandler struct {
-	services *service.Service
+	services service.Subscription
 }
 
-func NewSubscriptionHandler(service *service.Service) *SubscriptionHandler {
+func NewSubscriptionHandler(service service.Subscription) *SubscriptionHandler {
 	return &SubscriptionHandler{
 		services: service,
 	}
 }
 
 func (sh *SubscriptionHandler) PostSubscription(rw http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
+	err := r.ParseForm()
+	if err != nil {
+		log.Println(err)
+		return
+	}
 	email := r.FormValue("email")
 	city := r.FormValue("city")
 	frequency := r.FormValue("frequency")
@@ -36,7 +40,7 @@ func (sh *SubscriptionHandler) PostSubscription(rw http.ResponseWriter, r *http.
 
 	rw.Header().Set("Content-Type", "application/json")
 
-	err := sh.services.Subscribe(email, city, frequency)
+	err = sh.services.Subscribe(email, city, frequency)
 	if err != nil {
 		if errors.Is(err, service.AlreadySubscribedError) {
 			log.Println(err)
