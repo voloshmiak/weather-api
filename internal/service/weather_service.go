@@ -11,15 +11,19 @@ import (
 var CityNotFound = errors.New("city not found")
 var NoResponseError = errors.New("no response from weather API")
 
-type WeatherService struct{}
-
-func NewWeatherService() *WeatherService {
-	return new(WeatherService)
+type WeatherService struct {
+	weatherAPIKey string
 }
 
-func (ws *WeatherService) GetWeatherByCity(city, weatherAPIKey string) (*model.Weather, error) {
+func NewWeatherService(weatherAPIKey string) *WeatherService {
+	return &WeatherService{
+		weatherAPIKey: weatherAPIKey,
+	}
+}
+
+func (ws *WeatherService) GetWeatherByCity(city string) (*model.Weather, error) {
 	url := fmt.Sprintf("http://api.weatherapi.com/v1/current.json?key=%s&q=%s&aqi=no",
-		weatherAPIKey, city)
+		ws.weatherAPIKey, city)
 
 	response, err := http.Get(url)
 	if err != nil {

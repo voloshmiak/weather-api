@@ -10,20 +10,8 @@ services:
       - "8080:8080"
     depends_on:
       - db
-    environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: your_password_here
-      DB_NAME: weather_database
-      SMTP_HOST: mailhog
-      SMTP_PORT: 1025
-      API_PORT: 8080
-      SERVER_READ_TIMEOUT: 5
-      SERVER_WRITE_TIMEOUT: 10
-      SERVER_IDLE_TIMEOUT: 120
-      WEATHER_API_KEY: YOUR_WEATHER_API_KEY_HERE
-      MIGRATIONS_PATH: ./pkg/postgres/migrations
+    env_file:
+      - .env
     networks:
       - app-network
 

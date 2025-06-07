@@ -11,10 +11,11 @@ import (
 	"syscall"
 	"time"
 	"weather-api/internal/config"
+	"weather-api/internal/database"
 	"weather-api/internal/handler"
+	"weather-api/internal/mail"
 	"weather-api/internal/repository"
 	"weather-api/internal/service"
-	"weather-api/pkg/postgres"
 )
 
 func main() {
@@ -31,7 +32,7 @@ func run() error {
 	}
 
 	// connect to the database
-	conn, err := postgres.Connect(cfg.DB.User, cfg.DB.Password, cfg.DB.Host,
+	conn, err := database.Connect(cfg.DB.User, cfg.DB.Password, cfg.DB.Host,
 		cfg.DB.Port, cfg.DB.Name, cfg.DB.MigrationURL())
 	if err != nil {
 		return err
@@ -42,15 +43,18 @@ func run() error {
 	// set up the HTTP server
 	mux := http.NewServeMux()
 
+	// Mail hog email service
+	ml := mail.NewMailHog(cfg.Mail.Host, cfg.Mail.Port)
+
 	// Weather
-	ws := service.NewWeatherService()
-	wh := handler.NewWeatherHandler(ws, cfg)
+	ws := service.NewWeatherService(cfg.WeatherAPIKey)
+	wh := handler.NewWeatherHandler(ws)
 	wh.RegisterRoutes(mux)
 
 	// Subscription
 	sr := repository.NewSubscriptionRepository(conn)
-	ss := service.NewSubscriptionService(sr)
-	sh := handler.NewSubscriptionHandler(ss, cfg)
+	ss := service.NewSubscriptionService(sr, ml)
+	sh := handler.NewSubscriptionHandler(ss)
 	sh.RegisterRoutes(mux)
 
 	// Set up prefix for API routes

@@ -3,16 +3,18 @@ package service
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/google/uuid"
 	"log"
-	"net/smtp"
 	"weather-api/internal/model"
 )
 
 var AlreadySubscribedError = errors.New("already subscribed")
 var InvalidTokenError = errors.New("invalid Token")
 var TokenNotFoundError = errors.New("token not found")
+
+type EmailSender interface {
+	Send(from, to, subject, body, token string) error
+}
 
 type Subscription interface {
 	InsertSubscription(email, city, frequency, token string) error
@@ -24,15 +26,17 @@ type Subscription interface {
 
 type SubscriptionService struct {
 	repo Subscription
+	mail EmailSender
 }
 
-func NewSubscriptionService(repo Subscription) *SubscriptionService {
+func NewSubscriptionService(repo Subscription, mail EmailSender) *SubscriptionService {
 	return &SubscriptionService{
 		repo: repo,
+		mail: mail,
 	}
 }
 
-func (ss *SubscriptionService) Subscribe(email, city, frequency, mailHost, mailPort string) error {
+func (ss *SubscriptionService) Subscribe(email, city, frequency string) error {
 	token := uuid.NewString()
 
 	fromEmail := "me@here.com"
@@ -56,8 +60,7 @@ func (ss *SubscriptionService) Subscribe(email, city, frequency, mailHost, mailP
 			log.Println(err)
 			return err
 		}
-		err = sendEmailToMailHog(fromEmail, email, emailSubject, emailBody,
-			token, mailHost, mailPort)
+		err = ss.mail.Send(fromEmail, email, emailSubject, emailBody, token)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -71,8 +74,7 @@ func (ss *SubscriptionService) Subscribe(email, city, frequency, mailHost, mailP
 		return err
 	}
 
-	err = sendEmailToMailHog(fromEmail, email, emailSubject, emailBody,
-		token, mailHost, mailPort)
+	err = ss.mail.Send(fromEmail, email, emailSubject, emailBody, token)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -111,21 +113,6 @@ func (ss *SubscriptionService) Unsubscribe(token string) error {
 		if errors.Is(err, sql.ErrNoRows) {
 			return TokenNotFoundError
 		}
-		return err
-	}
-
-	return nil
-}
-
-func sendEmailToMailHog(fromEmail, toEmail, subject, body, token, smtpHost, smtpPort string) error {
-	smtpAddr := smtpHost + ":" + smtpPort
-	fmt.Println(smtpAddr)
-	fullBody := body + "\nYour token: " + token + "\n"
-	msgContent := fmt.Sprintf("From: %s \r\nTo: %s \r\nSubject: %s  \r\n\r\n %s", fromEmail, toEmail, subject, fullBody)
-
-	err := smtp.SendMail(smtpAddr, nil, fromEmail, []string{toEmail}, []byte(msgContent))
-	if err != nil {
-		log.Printf("Failed to send email to %s: %v", toEmail, err)
 		return err
 	}
 

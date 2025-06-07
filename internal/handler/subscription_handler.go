@@ -4,25 +4,22 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"weather-api/internal/config"
 	"weather-api/internal/service"
 )
 
 type subscription interface {
-	Subscribe(email, city, frequency, mailHost, mailPort string) error
+	Subscribe(email, city, frequency string) error
 	Confirm(token string) (string, error)
 	Unsubscribe(token string) error
 }
 
 type SubscriptionHandler struct {
 	service subscription
-	config  *config.Config
 }
 
-func NewSubscriptionHandler(service subscription, config *config.Config) *SubscriptionHandler {
+func NewSubscriptionHandler(service subscription) *SubscriptionHandler {
 	return &SubscriptionHandler{
 		service: service,
-		config:  config,
 	}
 }
 
@@ -55,7 +52,7 @@ func (sh *SubscriptionHandler) PostSubscription(rw http.ResponseWriter, r *http.
 
 	rw.Header().Set("Content-Type", "application/json")
 
-	err = sh.service.Subscribe(email, city, frequency, sh.config.Mail.Host, sh.config.Mail.Port)
+	err = sh.service.Subscribe(email, city, frequency)
 	if err != nil {
 		if errors.Is(err, service.AlreadySubscribedError) {
 			log.Println(err)

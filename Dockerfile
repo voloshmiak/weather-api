@@ -16,7 +16,7 @@ FROM alpine:latest
 WORKDIR /root/
 
 COPY --from=builder /app/main .
-COPY --from=builder /app/pkg/postgres/migrations ./pkg/postgres/migrations
+COPY --from=builder /app/internal/database/migrations ./internal/database/migrations
 
 EXPOSE 8080
 CMD ["./main"]

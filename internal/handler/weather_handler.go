@@ -5,22 +5,20 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"weather-api/internal/config"
 	"weather-api/internal/model"
 	"weather-api/internal/service"
 )
 
 type Weather interface {
-	GetWeatherByCity(city, weatherAPIKey string) (*model.Weather, error)
+	GetWeatherByCity(city string) (*model.Weather, error)
 }
 
 type WeatherHandler struct {
 	service Weather
-	config  *config.Config
 }
 
-func NewWeatherHandler(service Weather, config *config.Config) *WeatherHandler {
-	return &WeatherHandler{service: service, config: config}
+func NewWeatherHandler(service Weather) *WeatherHandler {
+	return &WeatherHandler{service: service}
 }
 
 func (wh *WeatherHandler) RegisterRoutes(mux *http.ServeMux) {
@@ -34,7 +32,7 @@ func (wh *WeatherHandler) GetWeather(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	weather, err := wh.service.GetWeatherByCity(city, wh.config.WeatherAPIKey)
+	weather, err := wh.service.GetWeatherByCity(city)
 	if err != nil {
 		if errors.Is(err, service.CityNotFound) {
 			http.Error(rw, "City not found", http.StatusNotFound)
