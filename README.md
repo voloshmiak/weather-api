@@ -11,23 +11,36 @@ This project is a weather subscription service API. It allows users to subscribe
 *   golang-migrate (for database migrations)
 
 ## Project Structure
-*   `cmd/weather-api/main.go`: Main application entry point.
-*   `internal/`: Contains the core application logic.
-    *   `config/`: Configuration management (environment variables).
-    *   `handler/`: HTTP handlers for API endpoints.
-    *   `repository/`: Database interaction logic.
-    *   `service/`: Business logic.
-    *   `models/`: Data structures.
-*   `migrations/`: SQL database migration files.
-*   `Dockerfile`: Defines the Docker image for the application.
-*   `docker-compose.yml`: Defines services, networks, and volumes for local development.
+```
+weather-api
+├── .env                  # Environment variables
+├── go.mod                # Go dependencies
+├── go.sum
+├── README.md
+├── Dockerfile        # Dockerfile for building the application image
+├── docker-compose.yml    # Docker Compose configuration
+├── cmd/
+│   └── weather-api/           # Application entry point
+│       └── main.go
+├── internal/             # Internal application logic
+│   ├── config/           # Application configuration
+│   ├── handler/          # HTTP handlers
+│   ├── model/            # Data models
+│   ├── repository/       # Database interaction logic
+│   ├── service/          # Business logic
+│   └── mail/             # Email handling logic
+└── pkg/
+    └── postgres/         # PostgreSQL utilities
+        ├── migrations/   # Database migration files
+        └── postgres.go   # PostgreSQL connection and migration logic
+```
 
 ## Getting Started
 
 ### Prerequisites
 *   Docker
 
-### Launching the Application
+### Launching the Application (with Docker)
 1.  **Clone the repository:**
     ```bash
     git clone https://github.com/voloshmiak/weather-api.git
@@ -107,3 +120,4 @@ Database migrations are handled by `golang-migrate` and are applied automaticall
 To stop the application and remove the containers, networks, and volumes created by `docker-compose up`:
 ```bash
 docker-compose down
+```

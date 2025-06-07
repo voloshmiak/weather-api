@@ -11,11 +11,11 @@ import (
 	"syscall"
 	"time"
 	"weather-api/internal/config"
-	"weather-api/internal/database"
 	"weather-api/internal/handler"
 	"weather-api/internal/mail"
 	"weather-api/internal/repository"
 	"weather-api/internal/service"
+	"weather-api/pkg/postgres"
 )
 
 func main() {
@@ -32,7 +32,7 @@ func run() error {
 	}
 
 	// connect to the database
-	conn, err := database.Connect(cfg.DB.User, cfg.DB.Password, cfg.DB.Host,
+	conn, err := postgres.Connect(cfg.DB.User, cfg.DB.Password, cfg.DB.Host,
 		cfg.DB.Port, cfg.DB.Name, cfg.DB.MigrationURL())
 	if err != nil {
 		return err
