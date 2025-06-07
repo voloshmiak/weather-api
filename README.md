@@ -22,17 +22,18 @@ weather-api
 ├── cmd/
 │   └── weather-api/           # Application entry point
 │       └── main.go
-├── internal/             # Internal application logic
-│   ├── config/           # Application configuration
-│   ├── handler/          # HTTP handlers
-│   ├── model/            # Data models
-│   ├── repository/       # Database interaction logic
-│   ├── service/          # Business logic
-│   └── mail/             # Email handling logic
-└── pkg/
-    └── postgres/         # PostgreSQL utilities
-        ├── migrations/   # Database migration files
-        └── postgres.go   # PostgreSQL connection and migration logic
+└── internal/             # Internal application logic
+     ├── config/           # Application configuration
+     ├── handler/          # HTTP handlers
+     ├── model/            # Data models
+     ├── repository/       # Database interaction logic
+     ├── service/          # Business logic
+     ├── mail/             # Email handling logic
+     └── database/           # Database related files
+         └── postgres/         # PostgreSQL utilities
+             ├── migrations/   # Database migration files
+             └── postgres.go   # PostgreSQL connection and migration logic
+
 ```
 
 ## Getting Started
