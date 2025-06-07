@@ -37,6 +37,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	defer conn.Close()
 
 	log.Println("Successfully connected to Database!")
 
