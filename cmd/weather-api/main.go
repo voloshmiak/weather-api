@@ -11,11 +11,11 @@ import (
 	"syscall"
 	"time"
 	"weather-api/internal/config"
+	"weather-api/internal/database/postgres"
 	"weather-api/internal/handler"
 	"weather-api/internal/mail"
 	"weather-api/internal/repository"
 	"weather-api/internal/service"
-	"weather-api/pkg/postgres"
 )
 
 func main() {

@@ -12,7 +12,7 @@ type Database struct {
 	Host       string `env:"DB_HOST" env-default:"localhost"`
 	Port       string `env:"DB_PORT" env-default:"5432"`
 	Name       string `env:"DB_NAME" env-default:"forum_database"`
-	Migrations string `env:"MIGRATIONS_PATH" env-default:"./pkg/postgres/migrations"`
+	Migrations string `env:"MIGRATIONS_PATH" env-default:"./internal/database/migrations"`
 }
 
 func (d *Database) MigrationURL() string {

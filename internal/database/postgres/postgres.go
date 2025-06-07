@@ -15,18 +15,6 @@ import (
 
 func Connect(user, password, host, port, name, sourceURL string) (*sql.DB, error) {
 	databaseURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, name)
-	conn, err := sql.Open("pgx", databaseURL)
-	if err != nil {
-		return nil, err
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	err = conn.PingContext(ctx)
-	if err != nil {
-		return nil, err
-	}
 
 	m, err := migrate.New(sourceURL, databaseURL)
 	if err != nil {
@@ -39,6 +27,19 @@ func Connect(user, password, host, port, name, sourceURL string) (*sql.DB, error
 		log.Println("No new migrations to apply.")
 	} else {
 		log.Println("Migrations applied successfully!")
+	}
+
+	conn, err := sql.Open("pgx", databaseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	err = conn.PingContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	return conn, nil
