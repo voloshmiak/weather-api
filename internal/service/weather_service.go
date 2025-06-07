@@ -4,17 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
-	"weather-api/internal/env"
 	"weather-api/internal/model"
 )
 
 var CityNotFound = errors.New("city not found")
-
-type Weather interface {
-	GetWeatherByCity(city string) (*model.Weather, error)
-}
+var NoResponseError = errors.New("no response from weather API")
 
 type WeatherService struct{}
 
@@ -22,15 +17,19 @@ func NewWeatherService() *WeatherService {
 	return new(WeatherService)
 }
 
-func (ws *WeatherService) GetWeatherByCity(city string) (*model.Weather, error) {
-	weatherAPIKey := env.GetWeatherAPIKey()
-	url := fmt.Sprintf("http://api.weatherapi.com/v1/current.json?key=%s&q=%s&aqi=no", weatherAPIKey, city)
+func (ws *WeatherService) GetWeatherByCity(city, weatherAPIKey string) (*model.Weather, error) {
+	url := fmt.Sprintf("http://api.weatherapi.com/v1/current.json?key=%s&q=%s&aqi=no",
+		weatherAPIKey, city)
 
 	response, err := http.Get(url)
 	if err != nil {
-		log.Println("Failed to fetch weather data:", err)
+		return nil, NoResponseError
 	}
 	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusForbidden {
+		return nil, errors.New("probably invalid API key")
+	}
 
 	if response.StatusCode != http.StatusOK {
 		return nil, CityNotFound

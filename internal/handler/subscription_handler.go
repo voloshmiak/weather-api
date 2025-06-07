@@ -4,17 +4,32 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"weather-api/internal/config"
 	"weather-api/internal/service"
 )
 
-type SubscriptionHandler struct {
-	services service.Subscription
+type subscription interface {
+	Subscribe(email, city, frequency, mailHost, mailPort string) error
+	Confirm(token string) (string, error)
+	Unsubscribe(token string) error
 }
 
-func NewSubscriptionHandler(service service.Subscription) *SubscriptionHandler {
+type SubscriptionHandler struct {
+	service subscription
+	config  *config.Config
+}
+
+func NewSubscriptionHandler(service subscription, config *config.Config) *SubscriptionHandler {
 	return &SubscriptionHandler{
-		services: service,
+		service: service,
+		config:  config,
 	}
+}
+
+func (sh *SubscriptionHandler) RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("POST /subscribe", sh.PostSubscription)
+	mux.HandleFunc("GET /confirm/{token}", sh.GetConfirm)
+	mux.HandleFunc("GET /unsubscribe/{token}", sh.GetUnsubscribe)
 }
 
 func (sh *SubscriptionHandler) PostSubscription(rw http.ResponseWriter, r *http.Request) {
@@ -40,7 +55,7 @@ func (sh *SubscriptionHandler) PostSubscription(rw http.ResponseWriter, r *http.
 
 	rw.Header().Set("Content-Type", "application/json")
 
-	err = sh.services.Subscribe(email, city, frequency)
+	err = sh.service.Subscribe(email, city, frequency, sh.config.Mail.Host, sh.config.Mail.Port)
 	if err != nil {
 		if errors.Is(err, service.AlreadySubscribedError) {
 			log.Println(err)
@@ -66,7 +81,7 @@ func (sh *SubscriptionHandler) GetConfirm(rw http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	unsubscribeToken, err := sh.services.Confirm(token)
+	unsubscribeToken, err := sh.service.Confirm(token)
 	if err != nil {
 		if errors.Is(err, service.InvalidTokenError) {
 			http.Error(rw, "Invalid token", http.StatusBadRequest)
@@ -94,7 +109,7 @@ func (sh *SubscriptionHandler) GetUnsubscribe(rw http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err := sh.services.Unsubscribe(token)
+	err := sh.service.Unsubscribe(token)
 	if err != nil {
 		if errors.Is(err, service.InvalidTokenError) {
 			http.Error(rw, "Invalid token", http.StatusBadRequest)

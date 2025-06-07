@@ -5,15 +5,26 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"weather-api/internal/config"
+	"weather-api/internal/model"
 	"weather-api/internal/service"
 )
 
-type WeatherHandler struct {
-	services service.Weather
+type Weather interface {
+	GetWeatherByCity(city, weatherAPIKey string) (*model.Weather, error)
 }
 
-func NewWeatherHandler(service service.Weather) *WeatherHandler {
-	return &WeatherHandler{services: service}
+type WeatherHandler struct {
+	service Weather
+	config  *config.Config
+}
+
+func NewWeatherHandler(service Weather, config *config.Config) *WeatherHandler {
+	return &WeatherHandler{service: service, config: config}
+}
+
+func (wh *WeatherHandler) RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /weather", wh.GetWeather)
 }
 
 func (wh *WeatherHandler) GetWeather(rw http.ResponseWriter, r *http.Request) {
@@ -23,13 +34,13 @@ func (wh *WeatherHandler) GetWeather(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	weather, err := wh.services.GetWeatherByCity(city)
+	weather, err := wh.service.GetWeatherByCity(city, wh.config.WeatherAPIKey)
 	if err != nil {
 		if errors.Is(err, service.CityNotFound) {
 			http.Error(rw, "City not found", http.StatusNotFound)
 			return
 		}
-		log.Println(err)
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	rw.Header().Set("Content-Type", "application/json")

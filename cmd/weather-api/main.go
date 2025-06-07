@@ -5,49 +5,36 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"log"
 	"net/http"
 	"os/signal"
 	"syscall"
 	"time"
-	"weather-api/internal/env"
+	"weather-api/internal/config"
 	"weather-api/internal/handler"
 	"weather-api/internal/repository"
-	"weather-api/internal/routes"
 	"weather-api/internal/service"
+	"weather-api/pkg/postgres"
 )
 
 func main() {
-	// get the database URL from environment variables
-	migrationURL := env.GetMigrationURL()
-	dbURL := env.GetDatabaseURL()
-
-	log.Printf("Trying to run migrations from: %s", migrationURL)
-
-	// run the migrations
-	m, err := migrate.New(migrationURL, dbURL)
-	if err != nil {
-		log.Fatalf("Failed to initialize migrations: %v. Migration URL: %s, DB URL: %s", err, migrationURL, dbURL)
+	if err := run(); err != nil {
+		log.Fatal(err)
 	}
+}
 
-	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		log.Fatalf("Failed to apply migrations: %v", err)
-	} else if errors.Is(err, migrate.ErrNoChange) {
-		log.Println("Migrations: No new migrations to apply.")
-	} else {
-		log.Println("Migrations applied successfully!")
+func run() error {
+	// config initialization
+	cfg, err := config.New()
+	if err != nil {
+		return err
 	}
 
 	// connect to the database
-	log.Printf("Trying to connect to database: " + dbURL)
-
-	conn, err := repository.NewPostgresDB()
+	conn, err := postgres.Connect(cfg.DB.User, cfg.DB.Password, cfg.DB.Host,
+		cfg.DB.Port, cfg.DB.Name, cfg.DB.MigrationURL())
 	if err != nil {
-		log.Fatalf("FATAL: Failed to connect to database: %v", err)
+		return err
 	}
 
 	log.Println("Successfully connected to Database!")
@@ -56,20 +43,21 @@ func main() {
 	mux := http.NewServeMux()
 
 	// Weather
-	weatherService := service.NewWeatherService()
-	weatherHandler := handler.NewWeatherHandler(weatherService)
+	ws := service.NewWeatherService()
+	wh := handler.NewWeatherHandler(ws, cfg)
+	wh.RegisterRoutes(mux)
 
 	// Subscription
-	subscriptionRepository := repository.NewSubscriptionRepository(conn)
-	subscriptionService := service.NewSubscriptionService(subscriptionRepository)
-	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService)
+	sr := repository.NewSubscriptionRepository(conn)
+	ss := service.NewSubscriptionService(sr)
+	sh := handler.NewSubscriptionHandler(ss, cfg)
+	sh.RegisterRoutes(mux)
 
-	// Register routes
-	routes.Register(mux, weatherHandler, subscriptionHandler)
+	// Set up prefix for API routes
+	mux.Handle("/api/", http.StripPrefix("/api", mux))
 
-	apiPort := env.GetAPIPort()
 	server := &http.Server{
-		Addr:    ":" + apiPort,
+		Addr:    ":" + cfg.Server.Port,
 		Handler: mux,
 	}
 
@@ -79,15 +67,17 @@ func main() {
 	go gracefulShutdown(done, server, conn)
 
 	// start listening
-	log.Printf("Starting server on port %s", apiPort)
+	log.Printf("Starting server on port %s", cfg.Server.Port)
 
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Fatalf("Failed to start server: %v", err)
+		return err
 	}
 
 	// wait for shutdown signal
 	<-done
 	log.Println("Server shutdown complete")
+
+	return nil
 }
 
 func gracefulShutdown(done chan bool, server *http.Server, conn *sql.DB) {

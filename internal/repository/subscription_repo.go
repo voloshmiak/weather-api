@@ -5,14 +5,6 @@ import (
 	"weather-api/internal/model"
 )
 
-type Subscription interface {
-	InsertSubscription(email, city, frequency, token string) error
-	GetSubscription(email string) (*model.Subscription, error)
-	UpdateTokens(token, unsubscribeToken string) error
-	UpdateConfirmationToken(token string) error
-	DeleteSubscription(token string) error
-}
-
 type SubscriptionRepository struct {
 	conn *sql.DB
 }

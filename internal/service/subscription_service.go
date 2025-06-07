@@ -7,8 +7,7 @@ import (
 	"github.com/google/uuid"
 	"log"
 	"net/smtp"
-	"weather-api/internal/env"
-	"weather-api/internal/repository"
+	"weather-api/internal/model"
 )
 
 var AlreadySubscribedError = errors.New("already subscribed")
@@ -16,22 +15,24 @@ var InvalidTokenError = errors.New("invalid Token")
 var TokenNotFoundError = errors.New("token not found")
 
 type Subscription interface {
-	Subscribe(email, city, frequency string) error
-	Confirm(token string) (string, error)
-	Unsubscribe(token string) error
+	InsertSubscription(email, city, frequency, token string) error
+	GetSubscription(email string) (*model.Subscription, error)
+	UpdateTokens(token, unsubscribeToken string) error
+	UpdateConfirmationToken(token string) error
+	DeleteSubscription(token string) error
 }
 
 type SubscriptionService struct {
-	repo repository.Subscription
+	repo Subscription
 }
 
-func NewSubscriptionService(repo repository.Subscription) *SubscriptionService {
+func NewSubscriptionService(repo Subscription) *SubscriptionService {
 	return &SubscriptionService{
 		repo: repo,
 	}
 }
 
-func (ss *SubscriptionService) Subscribe(email, city, frequency string) error {
+func (ss *SubscriptionService) Subscribe(email, city, frequency, mailHost, mailPort string) error {
 	token := uuid.NewString()
 
 	fromEmail := "me@here.com"
@@ -50,12 +51,13 @@ func (ss *SubscriptionService) Subscribe(email, city, frequency string) error {
 		if sub.Confirmed {
 			return AlreadySubscribedError
 		}
-		err := ss.repo.UpdateConfirmationToken(token)
+		err = ss.repo.UpdateConfirmationToken(token)
 		if err != nil {
 			log.Println(err)
 			return err
 		}
-		err = sendEmailToMailHog(fromEmail, email, emailSubject, emailBody, token)
+		err = sendEmailToMailHog(fromEmail, email, emailSubject, emailBody,
+			token, mailHost, mailPort)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -69,7 +71,8 @@ func (ss *SubscriptionService) Subscribe(email, city, frequency string) error {
 		return err
 	}
 
-	err = sendEmailToMailHog(fromEmail, email, emailSubject, emailBody, token)
+	err = sendEmailToMailHog(fromEmail, email, emailSubject, emailBody,
+		token, mailHost, mailPort)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -114,11 +117,9 @@ func (ss *SubscriptionService) Unsubscribe(token string) error {
 	return nil
 }
 
-func sendEmailToMailHog(fromEmail, toEmail, subject, body, token string) error {
-	smtpHost := env.GetSMTPHost()
-	smtpPort := env.GetSMTPPort()
+func sendEmailToMailHog(fromEmail, toEmail, subject, body, token, smtpHost, smtpPort string) error {
 	smtpAddr := smtpHost + ":" + smtpPort
-
+	fmt.Println(smtpAddr)
 	fullBody := body + "\nYour token: " + token + "\n"
 	msgContent := fmt.Sprintf("From: %s \r\nTo: %s \r\nSubject: %s  \r\n\r\n %s", fromEmail, toEmail, subject, fullBody)
 
