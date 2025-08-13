@@ -1,6 +1,4 @@
 # weather-api
-Software Engineering School 5.0 // Case Task
-
 This project is a weather subscription service API. It allows users to subscribe to weather updates for a specific city at a given frequency (hourly or daily). Subscriptions require email confirmation. Users can also confirm their subscription and unsubscribe. The API also provides an endpoint to get the current weather for a city.
 
 ## Technologies Used
