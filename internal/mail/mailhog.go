@@ -1,6 +1,7 @@
 package mail
 
 import (
+	"errors"
 	"fmt"
 	"net/smtp"
 )
@@ -24,7 +25,7 @@ func (e *Hog) Send(from, to, subject, body, token string) error {
 
 	err := smtp.SendMail(smtpAddr, nil, from, []string{to}, []byte(msgContent))
 	if err != nil {
-		return err
+		return errors.New("failed to send email")
 	}
 
 	return nil
